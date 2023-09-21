@@ -2,7 +2,6 @@
 
 import pickle
 import gzip
-import numpy
 
 
 def load_data():
@@ -14,10 +13,15 @@ def load_data():
     for that image.
     """
     try:
-        with gzip.open('data/mnist.pkl.gz', 'rb') as f:
-            training, validation, test = pickle.load(f, encoding='latin1')
+        with gzip.open('data/mnist.pkl.gz', 'rb') as f_obj:
+            training, validation, test = pickle.load(f_obj, encoding='latin1')
     except EOFError:
         # TODO not sure why it is throwing this error
         pass
 
     return training, validation, test
+
+
+def write_parameters():
+    """Write weights and biases to txt file to save learning."""
+    pass
