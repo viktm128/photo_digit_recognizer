@@ -49,14 +49,14 @@ class Network:
 
 
     def gradient_step(self, curr_input, v_label):
+        # set first layer as input
+        self.activation_vectors[0] = curr_input
+
         for L, _ in enumerate(self.weight_matrices):
-            # build del C / del Y^L vector
+            # build initial del C / del Y^L vector
             if L == 0:
                 # case when there is direct impact
                 del_C_y_L = self.activation_vectors[-L - 1] - v_label # j-rows, col vec
-            else:
-                # do some complicated addition and multiplication
-                pass
 
             # L-1 --> L is going from k nodes to j nodes
             w_L = self.weight_matrices[-L-1] # j x k, mat
@@ -67,18 +67,17 @@ class Network:
             # WARNING: specific to this definition of self.af
             af_prime = np.multiply(self.af(z_L), 1 - self.af(z_L)) # j-rows, col vec
 
-            # TODO major check here
-            np.swapaxes(self.weight_matrices[-L - 1], 0, 1)
-            np.swapaxes(self.weight_steps[-L - 1], 0, 1)
+            # useful piece of computation
             piece = np.multiply(del_C_y_L, af_prime)
-            for k, new_row in enumerate(self.weight_matrices[-L - 1]):
-                self.weight_steps[-L - 1] = np.multiply(piece.T, new_row)
-            np.swapaxes(self.weight_matrices[-L - 1], 0, 1)
-            np.swapaxes(self.weight_steps[-L - 1], 0, 1)
 
-            # del z / del b is a column of 1s, so multiply doesn't change piece
-            self.bias_steps[-L-1] = piece
-            
+            # compute del C / del w^L
+            self.weight_steps[-L - 1] = np.matmul(piece, y_L_one.T) # j x 1 matrix by 1 x k matrix gives j x k
+
+            # del z^L / del b^L is a column of 1s, so multiply doesn't change piece
+            self.bias_steps[-L - 1] = np.matmul(piece, np.ones(1, len(b_L))) # j x 1 matrix by 1 x k matrix gives j x k
+
+            # compute del_C_y_L for next step
+            del_C_y_L = np.matmul(w_L.T, piece) # k x j matrix by j x 1 gives k x 1            
 
 
 
