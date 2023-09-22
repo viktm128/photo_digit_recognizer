@@ -1,134 +1,131 @@
 """Class description for Network where most of the learning will happen."""
 
-import io_helper
+# standard imports
+import random
+
+# third-party imports
 import numpy as np
 import scipy
-import random
+
+# local imports
+import io_helper
+
 
 class Network:
     """Responsible for running gradient descent and backpropagation."""
 
     def __init__(self, learning_rate, batch_size, hidden_layers):
-        self.training, self.validation, self.test = io_helper.load_data()
+        """Set parameters for network training and function."""
+        self.tr_data, self.tr_label, _, _, self.te_data, self.te_label = io_helper.load_data()
         self.eta = learning_rate
-        self.batch_size = batch_size if len(self.training) % batch_size == 0 else 100
+        self.batch_size = \
+            batch_size if len(self.tr_data) % batch_size == 0 else 100
         self.batch_position = 0
-        self.epoch = list(range(len(self.training[0])))
-        self.epoch_num = 0
+        self.epoch = list(range(len(self.tr_data)))
+        self.epoch_num = -1
         self.build_data_structures(hidden_layers)
         self.af = scipy.special.expit
 
-
-
     def build_data_structures(self, hidden_layers):
+        """Initialize all mathematical objects in the network."""
         # input layer has 28x28 and output layer represents 10 digits
         layers = [784] + hidden_layers + [10]
-        self.weight_matrices = []
-        self.weight_steps = []
-        self.bias_vectors = []
-        self.bias_steps = []
-        self.activation_vectors = [np.zeros((784, 1))]
+        self.w_matrices = []
+        self.w_steps = []
+        self.b_vectors = []
+        self.b_steps = []
+        self.a_vectors = [np.zeros((784, 1))]
         for k in range(1, len(layers)):
             # TODO: do these randomizations need seeds
-            self.weight_matrices.append(np.random.rand(layers[k], layers[k - 1]))
-            self.weight_steps.append(np.zeros((layers[k], layers[k - 1])))
-            self.bias_vectors.append(np.random.rand(layers[k], 1))  # TODO: should this be randomized differently?
-            self.bias_steps.append(np.zeros((layers[k], 1)))  # TODO: should this be randomized differently?
-            self.activation_vectors.append(np.zeros((layers[k], 1)))
+            self.w_matrices.append(
+                np.random.rand(layers[k], layers[k - 1]))
+            self.w_steps.append(np.zeros((layers[k], layers[k - 1])))
 
+            # TODO: should this be randomized differently?
+            self.b_vectors.append(np.random.rand(layers[k], 1))
+            self.b_steps.append(np.zeros((layers[k], 1)))
 
+            self.a_vectors.append(np.zeros((layers[k], 1)))
 
     def batch_manager(self):
+        """Decide which inputs will be used in batches for SGD."""
         if self.batch_position == 0:
-            random.shuffle(self.epoch)
-            print("Starting epoch {}".format(self.epoch_num))
             self.epoch_num += 1
-        self.batch_position = (self.batch_position + self.batch_size) % len(self.training[0])
-        return self.epoch[self.batch_position - self.batch_size: self.batch_position]
+            random.shuffle(self.epoch)
+            # TODO: fix the printing one exttra problem.
+            print(f"Starting epoch {self.epoch_num}")
+        self.batch_position = (
+            self.batch_position + self.batch_size) % len(self.tr_data)
+        return self.epoch[
+            self.batch_position - self.batch_size: self.batch_position]
 
-
-
-    def gradient_step(self, curr_input, v_label):
-        # set first layer as input
-        self.activation_vectors[0] = curr_input
-
-        for L, _ in enumerate(self.weight_matrices):
+    def gradient_step(self, v_label):
+        """Backpropagate to compute the gradient of C for a fixed input."""
+        for L, _ in enumerate(self.w_matrices):
             # build initial del C / del Y^L vector
             if L == 0:
-                # case when there is direct impact
-                del_C_y_L = self.activation_vectors[-L - 1] - v_label # j-rows, col vec
+                # case when y directly impacts C
+                del_C_y_L = self.a_vectors[-L - 1] - v_label  # j x 1, vec
 
             # L-1 --> L is going from k nodes to j nodes
-            w_L = self.weight_matrices[-L-1] # j x k, mat
-            y_L_one = self.activation_vectors[-L - 2] # k-rows, col vec
-            b_L = self.biases_vectors[-L-1] # j-rows, col vec
-            z_L = np.matmul(w_L, y_L_one) + b_L # j-rows, col vec
+            w_L = self.w_matrices[-L-1]  # j x k, mat
+            y_L_one = self.a_vectors[-L - 2]  # k x 1, vec
+            b_L = self.b_vectors[-L-1]  # j x 1, vec
+            z_L = np.matmul(w_L, y_L_one) + b_L  # j x 1, vec
 
             # WARNING: specific to this definition of self.af
-            af_prime = np.multiply(self.af(z_L), 1 - self.af(z_L)) # j-rows, col vec
+            af_prime = np.multiply(
+                self.af(z_L), 1 - self.af(z_L))  # j x 1, vec
 
             # useful piece of computation
             piece = np.multiply(del_C_y_L, af_prime)
 
             # compute del C / del w^L
-            self.weight_steps[-L - 1] = np.matmul(piece, y_L_one.T) # j x 1 matrix by 1 x k matrix gives j x k
+            self.w_steps[-L - 1] = np.matmul(piece, y_L_one.T)  # j x 1 * 1 x k
 
-            # del z^L / del b^L is a column of 1s, so multiply doesn't change piece
-            self.bias_steps[-L - 1] = np.matmul(piece, np.ones(1, len(b_L))) # j x 1 matrix by 1 x k matrix gives j x k
+            # del z^L / del b^L is a column of 1s
+            # TODO: check that this formula works
+            self.b_steps[-L - 1] = piece  # j x 1
 
             # compute del_C_y_L for next step
-            del_C_y_L = np.matmul(w_L.T, piece) # k x j matrix by j x 1 gives k x 1            
-
-
-
+            del_C_y_L = np.matmul(w_L.T, piece)  # k x j * j x 1
 
     def update_activations(self, curr_input):
-        for j, _ in self.weight_matrices:
-            if j == 0:
-                self.activation_vectors[j] = self.af(np.matmul(self.weight_matrices[j], curr_input) + self.biases_vectors[j])
-            else:
-                self.activation_vectors[j] = self.af(np.matmul(self.weight_matrices[j], self.activation_vectors[j - 1]) + self.biases_vectors[j])
+        """Create first layer for specific input and feed forward."""
+        self.a_vectors[0] = curr_input
+        for j, _ in enumerate(self.w_matrices):
+            self.a_vectors[j + 1] = self.af(np.matmul(
+                self.w_matrices[j], self.a_vectors[j]) + self.b_vectors[j])
 
-
-
-    def learn(self):
-        """
-        while gradient step is too big:
-            build mini_batch
-            for x in mini_batch
-                compute all activations
-
-                take a gradient step
-                    update w, b for L
-                        compute partials for w, for b, and for y in L - 1
-                    update w, b for L-1
-                        compute partials for w, for b, and for y in L - 2
-                        will need to use previous partials in L - 1 and sum over them
-                    cotninue for L -2 until at last layer
-
-
-        """
-        while True:
-            new_batch = batch_manager()
+    def learn(self, epoch_max):
+        """Train the model for a set number of epochs."""
+        while self.epoch_num < epoch_max:
+            new_batch = self.batch_manager()
             for x in new_batch:
-                update_activations(x)
-                gradient_step(x)
-            for j, mat in enumerate(self.weight_steps):
-                mat /= len(self.batch_size)
-                self.weight_matrices[j] += mat
+                self.update_activations(self.tr_data[x])
+                self.gradient_step(self.tr_label[x])
+            for j, mat in enumerate(self.w_steps):
+                mat *= (-self.eta / self.batch_size)
+                self.w_matrices[j] += mat
 
-            for j, vec in enumerate(self.bias_steps):
-                vec /= len(self.batch_size)
-                self.bias_vectors[j] += vec
+            for j, vec in enumerate(self.b_steps):
+                vec *= (-self.eta / self.batch_size)
+                self.b_vectors[j] += vec
 
+    def output_parameters(self):
+        """Pass all relevant model information to be pickled and zipped."""
 
-        # TODO: write out parameters to some text file or something
-
-
-
+    def test(self):
+        correct = 0
+        for x, y in zip(self.te_data, self.te_label):
+            self.update_activations(x)
+            print(self.a_vectors[-1])
+            guess = np.argmax(self.a_vectors[-1])
+            correct += int(guess == y)
+        print(f"This model successfully identified {correct} / {len(self.te_data)}")
 
 
 if __name__ == "__main__":
-    n = Network(0.1, 120, [16, 16])
-        
-
+    n = Network(3, 100, [30])
+    n.learn(10)
+    n.test()
