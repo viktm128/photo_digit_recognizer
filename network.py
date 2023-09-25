@@ -9,6 +9,7 @@ import scipy
 
 # local imports
 import io_helper
+import testerNetwork
 
 
 class Network:
@@ -16,7 +17,7 @@ class Network:
 
     def __init__(self, learning_rate, batch_size, hidden_layers):
         """Set parameters for network training and function."""
-        self.tr_data, self.tr_label, _, _, self.te_data, self.te_label = io_helper.load_data()
+        self.tr_data, self.tr_label, self.va_data, self.va_label, self.te_data, self.te_label = io_helper.load_data()
         self.eta = learning_rate
         self.batch_size = \
             batch_size if len(self.tr_data) % batch_size == 0 else 100
@@ -130,7 +131,22 @@ class Network:
 
 
 if __name__ == "__main__":
-    n = Network(2, 30, [30])
-    n.learn(50)
-    n.test()
+    n = Network(2, 10, [30])
+    t = testerNetwork.tNet(n)
+    
+    n.learn(30)
+    #n.test()
+
+
+    """
+    # TEST UPDATE ACTIVATIONS
+    for x in n.va_data:
+        n.update_activations(x)
+        print(np.linalg.norm(n.a_vectors[-1] - t.feedforward(x)))
+    """
+
+
+    """
+    # TEST BATCH MANAGEMENT
+    """
 
