@@ -25,6 +25,7 @@ class Network:
         self.epoch_num = -1
         self.build_data_structures(hidden_layers)
         self.af = scipy.special.expit
+        np.set_printoptions(suppress=True)
 
     def build_data_structures(self, hidden_layers):
         """Initialize all mathematical objects in the network."""
@@ -36,24 +37,26 @@ class Network:
         self.b_steps = []
         self.a_vectors = [np.zeros((784, 1))]
         for k in range(1, len(layers)):
-            # TODO: do these randomizations need seeds
+            # alternate: 2 * np.random.randn(layers[k], layers[k - 1])
             self.w_matrices.append(
-                np.random.rand(layers[k], layers[k - 1]))
+                2 * (np.random.rand(layers[k], layers[k - 1]) - 0.5 ))
             self.w_steps.append(np.zeros((layers[k], layers[k - 1])))
 
-            # TODO: should this be randomized differently?
-            self.b_vectors.append(np.random.rand(layers[k], 1))
+            # alternate: 2 * np.random.randn(layers[k], 1)
+            self.b_vectors.append(2 * (np.random.rand(layers[k], 1) - 0.5))
             self.b_steps.append(np.zeros((layers[k], 1)))
 
             self.a_vectors.append(np.zeros((layers[k], 1)))
 
-    def batch_manager(self):
+    def batch_manager(self, epoch_max):
         """Decide which inputs will be used in batches for SGD."""
         if self.batch_position == 0:
             self.epoch_num += 1
-            random.shuffle(self.epoch)
-            # TODO: fix the printing one exttra problem.
-            print(f"Starting epoch {self.epoch_num}")
+            if self.epoch_num < epoch_max:
+                self.test()
+                random.shuffle(self.epoch)
+                # TODO: fix the printing one exttra problem.
+                print(f"Starting epoch {self.epoch_num}")
         self.batch_position = (
             self.batch_position + self.batch_size) % len(self.tr_data)
         return self.epoch[
@@ -74,17 +77,15 @@ class Network:
             z_L = np.matmul(w_L, y_L_one) + b_L  # j x 1, vec
 
             # WARNING: specific to this definition of self.af
-            af_prime = np.multiply(
-                self.af(z_L), 1 - self.af(z_L))  # j x 1, vec
+            af_prime = self.af(z_L) * (1 - self.af(z_L))  # j x 1, vec
 
             # useful piece of computation
-            piece = np.multiply(del_C_y_L, af_prime)
+            piece = del_C_y_L * af_prime
 
             # compute del C / del w^L
             self.w_steps[-L - 1] = np.matmul(piece, y_L_one.T)  # j x 1 * 1 x k
 
             # del z^L / del b^L is a column of 1s
-            # TODO: check that this formula works
             self.b_steps[-L - 1] = piece  # j x 1
 
             # compute del_C_y_L for next step
@@ -97,10 +98,11 @@ class Network:
             self.a_vectors[j + 1] = self.af(np.matmul(
                 self.w_matrices[j], self.a_vectors[j]) + self.b_vectors[j])
 
+
     def learn(self, epoch_max):
         """Train the model for a set number of epochs."""
+        new_batch = self.batch_manager(epoch_max)
         while self.epoch_num < epoch_max:
-            new_batch = self.batch_manager()
             for x in new_batch:
                 self.update_activations(self.tr_data[x])
                 self.gradient_step(self.tr_label[x])
@@ -112,6 +114,8 @@ class Network:
                 vec *= (-self.eta / self.batch_size)
                 self.b_vectors[j] += vec
 
+            new_batch = self.batch_manager(epoch_max)
+
     def output_parameters(self):
         """Pass all relevant model information to be pickled and zipped."""
 
@@ -119,13 +123,14 @@ class Network:
         correct = 0
         for x, y in zip(self.te_data, self.te_label):
             self.update_activations(x)
-            print(self.a_vectors[-1])
+            #print(self.a_vectors[-1])
             guess = np.argmax(self.a_vectors[-1])
             correct += int(guess == y)
-        print(f"This model successfully identified {correct} / {len(self.te_data)}")
+        print(f"Epoch finished: Successfully identified {correct} / {len(self.te_data)}")
 
 
 if __name__ == "__main__":
-    n = Network(3, 100, [30])
-    n.learn(10)
+    n = Network(2, 30, [30])
+    n.learn(50)
     n.test()
+
