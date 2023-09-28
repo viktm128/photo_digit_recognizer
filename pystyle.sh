@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 pycodestyle --exclude=env/ .
 if [ $? -eq 0 ] ; 
 then

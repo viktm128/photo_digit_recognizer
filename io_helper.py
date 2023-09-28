@@ -1,6 +1,7 @@
 """Used to read in photo data and label data."""
 
 from pathlib import Path
+import re
 import pickle
 import gzip
 import numpy as np
@@ -27,7 +28,11 @@ def load_data():
     va_label = validation[1]
     te_data = [np.reshape(x, (784, 1)) for x in test[0]]
     te_label = test[1]
-    return tr_data, tr_label, va_data, va_label, te_data, te_label
+    return (
+        {"data": tr_data, "label": tr_label},
+        {"data": va_data, "label": va_label},
+        {"data": te_data, "label": te_label}
+    )
 
 
 def vectorize_label(j):
@@ -39,7 +44,6 @@ def vectorize_label(j):
 
 def write_parameters(obj_list):
     """Write weights and biases to txt file to save learning."""
-    
     # find the next file number
     p = Path('./parameters/')
     curr_names = sorted(
@@ -49,16 +53,10 @@ def write_parameters(obj_list):
     else:
         for j, _ in enumerate(curr_names):
             if curr_names[j] != j:
+                f_num = j
                 break
-        f_num = j
 
     # write compressed pickled data
     f_name = p / ('model' + str(f_num) + '.pkl.gz')
     with gzip.open(f_name, 'wb') as f_obj:
         pickle.dump(obj_list, f_obj)
-
-
-
-if __name__ == "__main__":
-    trd, trl, vad, val, ted, tel = load_data()
-    breakpoint()

@@ -9,7 +9,6 @@ import scipy
 
 # local imports
 import io_helper
-import testerNetwork
 
 
 class Network:
@@ -17,12 +16,12 @@ class Network:
 
     def __init__(self, learning_rate, batch_size, hidden_layers):
         """Set parameters for network training and function."""
-        self.tr_data, self.tr_label, self.va_data, self.va_label, self.te_data, self.te_label = io_helper.load_data()
+        self.tr, self.va, self.te = io_helper.load_data()
         self.eta = learning_rate
         self.batch_size = \
-            batch_size if len(self.tr_data) % batch_size == 0 else 100
+            batch_size if len(self.tr["data"]) % batch_size == 0 else 100
         self.batch_position = 0
-        self.epoch = list(range(len(self.tr_data)))
+        self.epoch = list(range(len(self.tr["data"])))
         self.epoch_num = -1
         self.build_data_structures(hidden_layers)
         self.af = scipy.special.expit
@@ -40,7 +39,7 @@ class Network:
         for k in range(1, len(layers)):
             # alternate: 2 * np.random.randn(layers[k], layers[k - 1])
             self.w_matrices.append(
-                2 * (np.random.rand(layers[k], layers[k - 1]) - 0.5 ))
+                2 * (np.random.rand(layers[k], layers[k - 1]) - 0.5))
             self.w_steps.append(np.zeros((layers[k], layers[k - 1])))
 
             # alternate: 2 * np.random.randn(layers[k], 1)
@@ -54,12 +53,14 @@ class Network:
         if self.batch_position == 0:
             self.epoch_num += 1
             if self.epoch_num < epoch_max:
-                self.test()
+                if self.epoch_num > 0:
+                    print(
+                        "Epoch completed: Successfully identified " +
+                        f"{self.test()} / {len(self.te['data'])}")
                 random.shuffle(self.epoch)
-                # TODO: fix the printing one exttra problem.
                 print(f"Starting epoch {self.epoch_num}")
         self.batch_position = (
-            self.batch_position + self.batch_size) % len(self.tr_data)
+            self.batch_position + self.batch_size) % len(self.tr["data"])
         return self.epoch[
             self.batch_position - self.batch_size: self.batch_position]
 
@@ -99,14 +100,17 @@ class Network:
             self.a_vectors[j + 1] = self.af(np.matmul(
                 self.w_matrices[j], self.a_vectors[j]) + self.b_vectors[j])
 
-
     def learn(self, epoch_max):
         """Train the model for a set number of epochs."""
+        print(
+            "Model initialized: Successfully identified " +
+            f"{self.test()} / {len(self.te['data'])}")
+
         new_batch = self.batch_manager(epoch_max)
         while self.epoch_num < epoch_max:
             for x in new_batch:
-                self.update_activations(self.tr_data[x])
-                self.gradient_step(self.tr_label[x])
+                self.update_activations(self.tr["data"][x])
+                self.gradient_step(self.tr["label"][x])
             for j, mat in enumerate(self.w_steps):
                 mat *= (-self.eta / self.batch_size)
                 self.w_matrices[j] += mat
@@ -121,32 +125,16 @@ class Network:
         """Pass all relevant model information to be pickled and zipped."""
 
     def test(self):
+        """Determine how many of the test cases are passed by the model."""
         correct = 0
-        for x, y in zip(self.te_data, self.te_label):
+        for x, y in zip(self.te["data"], self.te["label"]):
             self.update_activations(x)
-            #print(self.a_vectors[-1])
             guess = np.argmax(self.a_vectors[-1])
             correct += int(guess == y)
-        print(f"Epoch finished: Successfully identified {correct} / {len(self.te_data)}")
+
+        return correct
 
 
 if __name__ == "__main__":
     n = Network(2, 10, [30])
-    t = testerNetwork.tNet(n)
-    
     n.learn(30)
-    #n.test()
-
-
-    """
-    # TEST UPDATE ACTIVATIONS
-    for x in n.va_data:
-        n.update_activations(x)
-        print(np.linalg.norm(n.a_vectors[-1] - t.feedforward(x)))
-    """
-
-
-    """
-    # TEST BATCH MANAGEMENT
-    """
-
