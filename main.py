@@ -23,9 +23,14 @@ def main(eta, batch_size, epoch_max, test, layers):
     calling main.py 784 30 10 will create a structure of 784 input neurons,
     10 output neurons, and 30 hidden neurons in a single layer.
     """
-    n = network.Network(eta, batch_size, test, layers)
-    n.learn(epoch_max)
+    h_params = {
+        "eta": eta,
+        "batch_size": batch_size,
+        "epoch_max": epoch_max
+    }
+    n = network.Network(h_params, test, layers)
+    n.learn()
 
 
 if __name__ == '__main__':
-    main()
+    main()  # pylint: disable=no-value-for-parameter
