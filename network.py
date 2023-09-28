@@ -14,23 +14,21 @@ import io_helper
 class Network:
     """Responsible for running gradient descent and backpropagation."""
 
-    def __init__(self, learning_rate, batch_size, hidden_layers):
+    def __init__(self, learning_rate, batch_size, test, layers):
         """Set parameters for network training and function."""
         self.tr, self.va, self.te = io_helper.load_data()
         self.eta = learning_rate
         self.batch_size = \
             batch_size if len(self.tr["data"]) % batch_size == 0 else 100
         self.batch_position = 0
+        self.test_flag = test
         self.epoch = list(range(len(self.tr["data"])))
         self.epoch_num = -1
-        self.build_data_structures(hidden_layers)
+        self.build_data_structures(layers)
         self.af = scipy.special.expit
-        np.set_printoptions(suppress=True)
 
-    def build_data_structures(self, hidden_layers):
+    def build_data_structures(self, layers):
         """Initialize all mathematical objects in the network."""
-        # input layer has 28x28 and output layer represents 10 digits
-        layers = [784] + hidden_layers + [10]
         self.w_matrices = []
         self.w_steps = []
         self.b_vectors = []
@@ -53,7 +51,7 @@ class Network:
         if self.batch_position == 0:
             self.epoch_num += 1
             if self.epoch_num < epoch_max:
-                if self.epoch_num > 0:
+                if self.test_flag and self.epoch_num > 0:
                     print(
                         "Epoch completed: Successfully identified " +
                         f"{self.test()} / {len(self.te['data'])}")
@@ -102,9 +100,10 @@ class Network:
 
     def learn(self, epoch_max):
         """Train the model for a set number of epochs."""
-        print(
-            "Model initialized: Successfully identified " +
-            f"{self.test()} / {len(self.te['data'])}")
+        if self.test_flag:
+            print(
+                "Model initialized: Successfully identified " +
+                f"{self.test()} / {len(self.te['data'])}")
 
         new_batch = self.batch_manager(epoch_max)
         while self.epoch_num < epoch_max:
@@ -121,6 +120,11 @@ class Network:
 
             new_batch = self.batch_manager(epoch_max)
 
+        if not self.test_flag:
+            print(
+                "Learning complete: Successfully identified " +
+                f"{self.test()} / {len(self.te['data'])}")
+
     def output_parameters(self):
         """Pass all relevant model information to be pickled and zipped."""
 
@@ -136,5 +140,5 @@ class Network:
 
 
 if __name__ == "__main__":
-    n = Network(2, 10, [30])
+    n = Network(3, 10, [784, 30, 10])
     n.learn(30)
