@@ -21,6 +21,7 @@ class EpochManager:
         self.epoch = list(range(data_len))
         self.epoch_num = 0
         self.epoch_max = epoch_max
+        #np.setprintopts(supress=True)
 
     def get_batch(self, j):
         """Take j, batch_num, return a list of numbers for batch."""
@@ -68,7 +69,8 @@ class Network:
 
     def gradient_step(self, batch_nums):
         """Backpropagate to compute the gradient of C for a fixed input."""
-        v_label = np.column_stack((self.tr["label"][x] for x in batch_nums))
+        breakpoint()
+        v_label = np.column_stack([self.tr["label"][x] for x in batch_nums])  # j x batch_size
         for L, _ in enumerate(self.w_matrices):
             # build initial del C / del Y^L vector
             if L == 0:
@@ -76,29 +78,33 @@ class Network:
                 del_C_y_L = self.a_vectors[-L - 1] - v_label  # j x batch_size
 
             # L-1 --> L is going from k nodes to j nodes
-            w_L = self.w_matrices[-L-1]  # j x k, mat
+            w_L = self.w_matrices[-L - 1]  # j x k, mat
             y_L_one = self.a_vectors[-L - 2]  # k x batch_size
-            b_L = self.b_vectors[-L-1]  # j x batch_size
+            b_L = self.b_vectors[-L - 1]  # j x batch_size
             z_L = np.matmul(w_L, y_L_one) + b_L  # j x batch_size
 
             # WARNING: specific to this definition of self.af
             af_prime = self.af(z_L) * (1 - self.af(z_L))  # j x batch_size
 
             # useful piece of computation
-            piece = del_C_y_L * af_prime
+            piece = del_C_y_L * af_prime  # j x batch_size
 
             # compute del C / del w^L
-            # self.w_steps[-L - 1] = np.matmul(piece, y_L_one.T)  # j x 1 * 1 x k
+            # self.w_steps[-L - 1] = np.matmul(piece, y_L_one.T)  # j x batch_size * batch_size x k
+            self.w_matrices[-L - 1] +=  (1 / len(batch_nums)) * (np.matmul(piece, y_L_one.T))
 
             # del z^L / del b^L is a column of 1s
             # self.b_steps[-L - 1] = piece  # j x 1
+            self.b_vectors[-L - 1] += (1 / len(batch_nums)) * piece
 
             # compute del_C_y_L for next step
-            del_C_y_L = np.matmul(w_L.T, piece)  # k x j * j x 1
+            del_C_y_L = np.matmul(w_L.T, piece)  # k x j * j x batch_size
 
     def batch_feed_forward(self, batch_nums):
-        inputs = np.column_stack((self.tr["data"][x] for x in batch_nums))
-        pass
+        self.a_vectors[0] = np.column_stack([self.tr["data"][x] for x in batch_nums])
+        for j, _ in enumerate(self.w_matrices):
+            self.a_vectors[j + 1] = self.af(np.matmul(
+                self.w_matrices[j], self.a_vectors[j]) + self.b_vectors[j])
 
     def model_output(self, curr_input):
         """Get output for a specific input."""
