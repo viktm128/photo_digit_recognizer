@@ -21,7 +21,6 @@ class EpochManager:
         self.epoch = list(range(data_len))
         self.epoch_num = 0
         self.epoch_max = epoch_max
-        #np.setprintopts(supress=True)
 
     def get_batch(self, j):
         """Take j, batch_num, return a list of numbers for batch."""
@@ -69,7 +68,6 @@ class Network:
 
     def gradient_step(self, batch_nums):
         """Backpropagate to compute the gradient of C for a fixed input."""
-        breakpoint()
         v_label = np.column_stack([self.tr["label"][x] for x in batch_nums])  # j x batch_size
         for L, _ in enumerate(self.w_matrices):
             # build initial del C / del Y^L vector
@@ -91,11 +89,11 @@ class Network:
 
             # compute del C / del w^L
             # self.w_steps[-L - 1] = np.matmul(piece, y_L_one.T)  # j x batch_size * batch_size x k
-            self.w_matrices[-L - 1] +=  (1 / len(batch_nums)) * (np.matmul(piece, y_L_one.T))
+            self.w_matrices[-L - 1] +=  (-1 / len(batch_nums)) * (np.matmul(piece, y_L_one.T))
 
             # del z^L / del b^L is a column of 1s
             # self.b_steps[-L - 1] = piece  # j x 1
-            self.b_vectors[-L - 1] += (1 / len(batch_nums)) * piece
+            self.b_vectors[-L - 1] += (-1 / len(batch_nums)) * piece
 
             # compute del_C_y_L for next step
             del_C_y_L = np.matmul(w_L.T, piece)  # k x j * j x batch_size
@@ -110,8 +108,8 @@ class Network:
         """Get output for a specific input."""
         output = curr_input
         for j, _ in enumerate(self.w_matrices):
-            output = self.af(np.matmul(
-                self.w_matrices[j], output) + self.b_vectors[j][:, [0]])
+            output = self.af(np.matmul(self.w_matrices[j], output) + self.b_vectors[j][:, [0]])
+        return output
 
     def learn(self):
         """Train the model for a set number of epochs."""
@@ -151,7 +149,8 @@ class Network:
         """Determine how many of the test cases are passed by the model."""
         correct = 0
         for x, y in zip(self.te["data"], self.te["label"]):
-            guess = np.argmax(self.model_output(x))
+            output = self.model_output(x)
+            guess = np.argmax(output)
             correct += int(guess == y)
 
         return correct
