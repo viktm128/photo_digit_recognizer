@@ -12,8 +12,9 @@ import network
 @click.option('--epoch_max', default=10,
               help='Parameter to control how long to make the network learn.')
 @click.option('--test', default=True, help='Output between each epoch.')
+@click.option('--cross_entropy', default=True, help='Cross ntropy cost vs. quadratic cost.')
 @click.argument('layers', type=int, nargs=-1)
-def main(eta, batch_size, epoch_max, test, layers):
+def main(eta, batch_size, epoch_max, test, cross_entropy, layers):
     """Call upon the Network class with certain hyper parameters.
 
     The class will always learn based on the parameters provided and then
@@ -26,7 +27,8 @@ def main(eta, batch_size, epoch_max, test, layers):
     h_params = {
         "eta": eta,
         "batch_size": batch_size,
-        "epoch_max": epoch_max
+        "epoch_max": epoch_max,
+        "cross_entropy": cross_entropy
     }
     n = network.Network(h_params, test, layers)
     n.learn()

@@ -4,11 +4,11 @@
 from random import shuffle  # pylint: disable=no-name-in-module
 
 # third-party imports
-from scipy.special import expit  # pylint: disable=no-name-in-module
 import numpy as np
 
 # local imports
 import io_helper
+import func
 
 
 class EpochManager:
@@ -55,6 +55,9 @@ class Network:
 
         self.build_data_structures(layers, h_params["batch_size"])
         self.af = expit
+        self.cost = MathFunction.CrossEntropy if h_params["cross_entropy"]else MathFunction.QuadraticCross
+
+
 
     def build_data_structures(self, layers, batch_size):
         """Initialize all mathematical objects in the network."""
@@ -73,7 +76,7 @@ class Network:
             # build initial del C / del Y^L vector
             if L == 0:
                 # case when y directly impacts C
-                del_C_y_L = self.a_vectors[-L - 1] - v_label  # j x batch_size
+                piece = (self.cost).prime(z, y, a) # j x batch_size
 
             # L-1 --> L is going from k nodes to j nodes
             w_L = self.w_matrices[-L - 1]  # j x k, mat
@@ -81,11 +84,13 @@ class Network:
             b_L = self.b_vectors[-L - 1]  # j x batch_size
             z_L = np.matmul(w_L, y_L_one) + b_L  # j x batch_size
 
+            
             # WARNING: specific to this definition of self.af
             af_prime = self.af(z_L) * (1 - self.af(z_L))  # j x batch_size
 
             # useful piece of computation
             piece = del_C_y_L * af_prime  # j x batch_size
+            
 
             # compute del C / del w^L
             # self.w_steps[-L - 1] = np.matmul(piece, y_L_one.T)  # j x batch_size * batch_size x k
@@ -96,7 +101,7 @@ class Network:
             self.b_vectors[-L - 1] += (-1 / len(batch_nums)) * piece
 
             # compute del_C_y_L for next step
-            del_C_y_L = np.matmul(w_L.T, piece)  # k x j * j x batch_size
+            piece = np.matmul(w_L.T, piece)  # k x j * j x batch_size
 
     def batch_feed_forward(self, batch_nums):
         self.a_vectors[0] = np.column_stack([self.tr["data"][x] for x in batch_nums])
