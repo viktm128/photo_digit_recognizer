@@ -1,6 +1,6 @@
 """Create a base abstract class for mathematical functions."""
 
-from ABC import abstractmethod
+from abc import abstractmethod
 from scipy.special import expit  # pylint: disable=no-name-in-module
 
 
@@ -27,7 +27,8 @@ class QuadraticCost(MathFunction):
 
     @staticmethod
     def prime(z, y, a):
-        return (y - a)
+        sig_prime = expit(z) * (1 - expit(z))
+        return (y - a) * sig_prime
 
 
 class CrossEntropy(MathFunction):
@@ -38,5 +39,4 @@ class CrossEntropy(MathFunction):
         return -np.sum(np.nan_to_num(a * np.log(y) - (1 - a) * np.log(1 - y)))
 
     def prime(z, y, a):
-        sig_prime = expit(z) * (1 - expit(z))
-        return (y - a) / sig_prime
+        return (y - a) 
