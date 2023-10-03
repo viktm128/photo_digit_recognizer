@@ -69,8 +69,8 @@ class Network:
         self.a_vectors = [np.zeros((784, batch_size))]
         for k in range(1, len(layers)):
             # np.sqrt(layers[k - 1])
-            self.w_matrices.append(np.random.randn(layers[k], layers[k - 1]) / 1)
-            self.b_vectors.append(np.column_stack((np.random.randn(layers[k]), ) * batch_size))
+            self.w_matrices.append(2 * np.random.randn(layers[k], layers[k - 1]) / np.sqrt(layers[k - 1]))
+            self.b_vectors.append(2 * np.column_stack((np.random.randn(layers[k]), ) * batch_size))
             self.a_vectors.append(np.zeros((layers[k], batch_size)))
 
     def gradient_step(self, batch_nums):
