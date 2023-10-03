@@ -5,7 +5,7 @@ import network
 
 
 @click.command()
-@click.option('--eta', type=float, default=3,
+@click.option('--eta', type=float, default=0.5,
               help='Parameter to control step size during SDG.', show_default=True)
 @click.option('--batch_size', default=10,
               help='Parameter to control sample size in each SDG step.', show_default=True)

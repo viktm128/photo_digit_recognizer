@@ -58,6 +58,7 @@ class Network:
         self.af = expit
         self.cost = func.CrossEntropy if h_params["cross_entropy"]else func.QuadraticCross
         self.lmbda = h_params["lmbda"]
+        np.set_printoptions(suppress=True)
 
 
 
@@ -67,7 +68,8 @@ class Network:
         self.b_vectors = []
         self.a_vectors = [np.zeros((784, batch_size))]
         for k in range(1, len(layers)):
-            self.w_matrices.append(np.random.randn(layers[k], layers[k - 1]) / np.sqrt(layers[k - 1]))
+            # np.sqrt(layers[k - 1])
+            self.w_matrices.append(np.random.randn(layers[k], layers[k - 1]) / 1)
             self.b_vectors.append(np.column_stack((np.random.randn(layers[k]), ) * batch_size))
             self.a_vectors.append(np.zeros((layers[k], batch_size)))
 
@@ -94,12 +96,12 @@ class Network:
             
 
             # compute del C / del w^L
-            # self.w_steps[-L - 1] = np.matmul(piece, y_L_one.T)  # j x batch_size * batch_size x k
-            self.w_matrices[-L - 1] +=  self.eta * (-1 / len(batch_nums) * (np.matmul(piece, y_L_one.T)) -self.lmbda / len(batch_nums) * w_L)
+            # j x batch_size * batch_size x k + j x k
+            self.w_matrices[-L - 1] +=  (-self.eta) * ((np.matmul(piece, y_L_one.T) / len(batch_nums)) + (self.lmbda / len(self.tr["data"])) * w_L)
 
             # del z^L / del b^L is a column of 1s
-            # self.b_steps[-L - 1] = piece  # j x 1
-            self.b_vectors[-L - 1] += self.eta * (-1/ len(batch_nums)) * piece
+            # j x 1
+            self.b_vectors[-L - 1] += (-self.eta / len(batch_nums)) * piece
 
             # compute del_C_y_L for next step
             del_C_y_L = np.matmul(w_L.T, piece)  # k x j * j x batch_size
