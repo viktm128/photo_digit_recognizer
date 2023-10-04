@@ -6,15 +6,24 @@ import network
 
 @click.command()
 @click.option('--eta', type=float, default=0.5,
-              help='Parameter to control step size during SDG.', show_default=True)
+              help='Parameter to control step size during SDG.',
+              show_default=True)
 @click.option('--batch_size', default=10,
-              help='Parameter to control sample size in each SDG step.', show_default=True)
+              help='Parameter to control sample size in each SDG step.',
+              show_default=True)
 @click.option('--epoch_max', default=10,
-              help='Parameter to control how long to make the network learn.', show_default=True)
-@click.option('--test', default=True, help='Output between each epoch.', show_default=True)
-@click.option('--cross_entropy', default=True, help='Cross entropy cost vs. quadratic cost.', show_default=True)
-@click.option('--lmbda', default=0.1, help='A number geq 0 inclusive to control amount of regularization.', show_default=True)
+              help='Parameter to control how long to make the network learn.',
+              show_default=True)
+@click.option('--test', default=True, help='Output between each epoch.',
+              show_default=True)
+@click.option('--cross_entropy', default=True,
+              help='Cross entropy cost vs. quadratic cost.',
+              show_default=True)
+@click.option('--lmbda', default=0.1,
+              help='# >= 0 inclusive to control amount of regularization.',
+              show_default=True)
 @click.argument('layers', type=int, nargs=-1)
+# pylint: disable=too-many-arguments
 def main(eta, batch_size, epoch_max, test, cross_entropy, lmbda, layers):
     """Call upon the Network class with certain hyper parameters.
 

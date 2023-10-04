@@ -2,6 +2,7 @@
 
 from abc import abstractmethod
 from scipy.special import expit  # pylint: disable=no-name-in-module
+import numpy as np
 
 
 class MathFunction():
@@ -10,12 +11,10 @@ class MathFunction():
     @abstractmethod
     def eval(z, y, a):
         """Find function value at point."""
-        pass
 
     @abstractmethod
     def prime(z, y, a):
         """One variable derivative and leave it in vectorized form."""
-        pass
 
 
 class QuadraticCost(MathFunction):
@@ -23,20 +22,24 @@ class QuadraticCost(MathFunction):
 
     @staticmethod
     def eval(z, y, a):
+        """Eval for quadratic cost."""
         return 0.5 * (np.linalg.norm(y - a))
 
     @staticmethod
     def prime(z, y, a):
+        """Compute derivative vector for quadratic cost."""
         sig_prime = expit(z) * (1 - expit(z))
         return (y - a) * sig_prime
 
 
 class CrossEntropy(MathFunction):
-    """Implement C(y) = "-aln(y) - (1 - a)ln(1 - y)"""
+    """Implement C(y) = "-aln(y) - (1 - a)ln(1 - y)."""
 
     @staticmethod
     def eval(z, y, a):
+        """Eval for cross entropy cost."""
         return -np.sum(np.nan_to_num(a * np.log(y) - (1 - a) * np.log(1 - y)))
 
     def prime(z, y, a):
-        return (y - a) 
+        """Compute derivative vector for cross entropy cost."""
+        return y - a

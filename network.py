@@ -56,11 +56,10 @@ class Network:
 
         self.build_data_structures(layers, h_params["batch_size"])
         self.af = expit
-        self.cost = func.CrossEntropy if h_params["cross_entropy"]else func.QuadraticCross
+        self.cost = func.CrossEntropy if h_params["cross_entropy"] \
+            else func.QuadraticCost
         self.lmbda = h_params["lmbda"]
         np.set_printoptions(suppress=True)
-
-
 
     def build_data_structures(self, layers, batch_size):
         """Initialize all mathematical objects in the network."""
@@ -68,14 +67,17 @@ class Network:
         self.b_vectors = []
         self.a_vectors = [np.zeros((784, batch_size))]
         for k in range(1, len(layers)):
-            # np.sqrt(layers[k - 1])
-            self.w_matrices.append(2 * np.random.randn(layers[k], layers[k - 1]) / np.sqrt(layers[k - 1]))
-            self.b_vectors.append(2 * np.column_stack((np.random.randn(layers[k]), ) * batch_size))
+            self.w_matrices.append(2 * np.random.randn(
+                layers[k], layers[k - 1]) / np.sqrt(layers[k - 1]))
+            self.b_vectors.append(2 * np.column_stack((np.random.randn(
+                layers[k]), ) * batch_size))
             self.a_vectors.append(np.zeros((layers[k], batch_size)))
 
     def gradient_step(self, batch_nums):
         """Backpropagate to compute the gradient of C for a fixed input."""
-        v_label = np.column_stack([self.tr["label"][x] for x in batch_nums])  # j x batch_size
+        v_label = np.column_stack([self.tr["label"][x] for x in batch_nums])
+        # j x batch_size
+
         for L, _ in enumerate(self.w_matrices):
             # L-1 --> L is going from k nodes to j nodes
             w_L = self.w_matrices[-L - 1]  # j x k, mat
@@ -89,15 +91,18 @@ class Network:
             # build initial del C / del Y^L vector
             if L == 0:
                 # case when y directly impacts C
-                del_C_y_L = (self.cost).prime(z_L, self.a_vectors[-L - 1], v_label) # j x batch_size
-            
+                del_C_y_L = (self.cost).prime(
+                    z_L, self.a_vectors[-L - 1], v_label)  # j x batch_size
+
             # useful piece of computation
-            piece = del_C_y_L * af_prime if L > 0 else del_C_y_L # j x batch_size
-            
+            piece = del_C_y_L * af_prime if L > 0 else del_C_y_L
+            # j x batch_size
 
             # compute del C / del w^L
             # j x batch_size * batch_size x k + j x k
-            self.w_matrices[-L - 1] +=  (-self.eta) * ((np.matmul(piece, y_L_one.T) / len(batch_nums)) + (self.lmbda / len(self.tr["data"])) * w_L)
+            self.w_matrices[-L - 1] += (-self.eta) * (
+                (np.matmul(piece, y_L_one.T) / len(batch_nums)) +
+                (self.lmbda / len(self.tr["data"])) * w_L)
 
             # del z^L / del b^L is a column of 1s
             # j x 1
@@ -107,7 +112,9 @@ class Network:
             del_C_y_L = np.matmul(w_L.T, piece)  # k x j * j x batch_size
 
     def batch_feed_forward(self, batch_nums):
-        self.a_vectors[0] = np.column_stack([self.tr["data"][x] for x in batch_nums])
+        """Calculate activations for a full mini batch of vectors."""
+        self.a_vectors[0] = np.column_stack(
+            [self.tr["data"][x] for x in batch_nums])
         for j, _ in enumerate(self.w_matrices):
             self.a_vectors[j + 1] = self.af(np.matmul(
                 self.w_matrices[j], self.a_vectors[j]) + self.b_vectors[j])
@@ -116,7 +123,8 @@ class Network:
         """Get output for a specific input."""
         output = curr_input
         for j, _ in enumerate(self.w_matrices):
-            output = self.af(np.matmul(self.w_matrices[j], output) + self.b_vectors[j][:, [0]])
+            output = self.af(np.matmul(
+                self.w_matrices[j], output) + self.b_vectors[j][:, [0]])
         return output
 
     def learn(self):
