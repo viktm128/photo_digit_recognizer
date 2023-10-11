@@ -6,8 +6,17 @@ import pickle
 import gzip
 import numpy as np
 
-
 def load_data():
+    """Get data objects which theano can use on the GPU."""
+    try:
+        with gzip.open('data/mnist.pkl.gz', 'rb') as f_obj:
+            training, validation, test = pickle.load(f_obj, encoding='latin1')
+    except EOFError:
+        # TODO not sure why it is throwing this error
+        pass
+    return training, validation, test
+
+def load_shaped_data():
     """
     Take in a .gz file with training, validation, test as tuples.
 
@@ -15,12 +24,7 @@ def load_data():
     grayscale vales and y is an array of labels
     for that image.
     """
-    try:
-        with gzip.open('data/mnist.pkl.gz', 'rb') as f_obj:
-            training, validation, test = pickle.load(f_obj, encoding='latin1')
-    except EOFError:
-        # TODO not sure why it is throwing this error
-        pass
+    training, validation, test = load_data()
 
     tr_data = [np.reshape(x, (784, 1)) for x in training[0]]
     tr_label = [vectorize_label(j) for j in training[1]]

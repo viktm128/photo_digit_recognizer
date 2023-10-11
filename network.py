@@ -43,7 +43,7 @@ class Network:
 
     def __init__(self, h_params, test, layers):
         """Set parameters for network training and function."""
-        self.tr, self.va, self.te = io_helper.load_data()
+        self.tr, self.va, self.te = io_helper.load_shaped_data()
         self.eta = h_params["eta"]
         self.test_flag = test
 

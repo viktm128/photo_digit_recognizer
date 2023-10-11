@@ -1,39 +1,48 @@
 """Class description for Convolutional Neural Network."""
-# Testing new ssh key for Git
 
-class CLayer:
+# standard imports
+
+# third party imports
+import numpy as np
+import theano
+import theano.tensor as T
+from theano.tensor.nnet import conv
+from theano.tensor.nnet import softmax
+
+# local imports
+import io_helper
+
+
+# activation functions
+def ReLU(z): return T.maximum(0.0, z)
+from theano.tensor.nnet import sigmoid
+from theano.tensor.nnet import tanh
+
+if GPU:
+    print("Trying to run on a GPU...")
+    try:
+        theano.config.device = 'gpu'
+    except:
+        pass
+    theano.config.floatX = 'float32'
+    print("Success!")
+else:
+    print("Running with a CPU")
+
+
+
+class CostLayer:
+    """Create output layer based on specific cost function."""
+
+class ConnectedLayer:
+    """Rewrite the majority of original network class."""
+
+
+class CPLayer:
     """Implement CNN for photo recognition."""
 
-    def __init__(self):
-        """Get parameters and set up data structures."""
-        self.f_maps = [("c", "p")]
-        self.w_mats = []
-        self.biases = []
-        self.stride = 1
-        self.lrf_size = 5
-        self.p_size = 2 # k x k grid for reduction
-        pass
 
-    def pool(self):
-        """Condense feature maps usinng L^2 pooling."""
-        for pair in self.f_maps:
-            for j, row in enumerate(pair[1]):
-                for k, _ in enumerate(row):
-                    pair[1][j, k] = np.linalg.norm(pair[0][self.p_size * j : self.p_size(j + 1), self.p_size * k : self.p_size * (k + 1)])
 
-    def batch_feed_forward(self, batch_nums):
-        """Update activations for a batch of inputs."""
-        pass
-
-    def layer_output(self, x):
-        """Compute output for this layer for a single input."""
-        # TODO: implement stride lengths
-        for i, pair in enumerate(self.f_maps):
-            for j,row in enumerate(pair[0]):
-                for k, _ in enumerate(row):
-                    self.f_maps[i][0][j, k] = np.sum(self.w_mats[i] * x[j : j + self.lrf_size, k : k + self.lrf_size]) + self.biases[i]
-        self.pool()
-
-    def gradient_step(self):
-        """Find gradient step and back propograte appropriately."""
-        pass
+if __name__ == "__main__":
+    tr, va, te = load_shared_data()
+    breakpoint()

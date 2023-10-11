@@ -1,3 +1,5 @@
 numpy==1.24.4
 scipy==1.10.1
 click==8.1.7
+matplotlib=3.8.0
+Theano=1.0.5
