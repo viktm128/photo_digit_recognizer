@@ -38,12 +38,12 @@ class EpochManager:
         return False
 
 
-class Network:
+class Network:  # pylint: disable=too-many-instance-attributes
     """Responsible for running gradient descent and backpropagation."""
 
     def __init__(self, h_params, test, layers):
         """Set parameters for network training and function."""
-        self.tr, self.va, self.te = io_helper.load_shaped_data()
+        self.tr, self.va, self.te = io_helper.load_flat_data()
         self.eta = h_params["eta"]
         self.test_flag = test
 

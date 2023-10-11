@@ -24,17 +24,22 @@ import io_helper
               show_default=True)
 def cnn(eta, batch_size, epochs, reg):
     """Attempt photo recognition using CNNs."""
-    (trd, trl), (vad, val), (ted, tel) = io_helper.load_data()
+    (trd, trl), (_, _), (ted, tel) = io_helper.load_data()
 
-    # TODO: regularization is causing problems 
+    # TODO: regularization is causing problems
     model = keras.Sequential([
-        keras.layers.Conv2D(20, (5,5), activation='sigmoid', input_shape=(28, 28, 1)),
+        keras.layers.Conv2D(
+            20, (5, 5), activation='sigmoid', input_shape=(28, 28, 1)),
         keras.layers.MaxPooling2D(2, 2),
-        keras.layers.Conv2D(20, (5,5), activation='sigmoid'),
+        keras.layers.Conv2D(20, (5, 5), activation='sigmoid'),
         keras.layers.MaxPooling2D(2, 2),
         keras.layers.Flatten(),
-        keras.layers.Dense(30, activation='sigmoid', kernel_regularizer=tf.keras.regularizers.L2(reg)),
-        keras.layers.Dense(10, activation='sigmoid', kernel_regularizer=tf.keras.regularizers.L2(reg))
+        keras.layers.Dense(
+            30, activation='sigmoid',
+            kernel_regularizer=tf.keras.regularizers.L2(reg)),
+        keras.layers.Dense(
+            10, activation='sigmoid',
+            kernel_regularizer=tf.keras.regularizers.L2(reg))
     ])
 
     model.compile(
@@ -43,10 +48,9 @@ def cnn(eta, batch_size, epochs, reg):
         metrics=[keras.metrics.SparseCategoricalAccuracy()]
     )
 
-    history = model.fit(trd, trl, batch_size=batch_size, epochs=epochs)
-    ans = model.evaluate(ted, tel, batch_size=len(ted))
-
+    model.fit(trd, trl, batch_size=batch_size, epochs=epochs)
+    model.evaluate(ted, tel, batch_size=len(ted))
 
 
 if __name__ == "__main__":
-    cnn()
+    cnn()  # pylint: disable=no-value-for-parameter

@@ -6,6 +6,7 @@ import pickle
 import gzip
 import numpy as np
 
+
 def load_data():
     """Get data objects which theano can use on the GPU."""
     try:
@@ -23,6 +24,7 @@ def load_data():
     te_label = test[1]
 
     return (tr_data, tr_label), (va_data, va_label), (te_data, te_label)
+
 
 def load_flat_data():
     """
