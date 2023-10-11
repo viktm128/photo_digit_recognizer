@@ -14,9 +14,17 @@ def load_data():
     except EOFError:
         # TODO not sure why it is throwing this error
         pass
-    return training, validation, test
 
-def load_shaped_data():
+    tr_data = np.array([np.reshape(x, (28, 28)) for x in training[0]])
+    tr_label = training[1]
+    va_data = np.array([np.reshape(x, (28, 28)) for x in validation[0]])
+    va_label = validation[1]
+    te_data = np.array([np.reshape(x, (28, 28)) for x in test[0]])
+    te_label = test[1]
+
+    return (tr_data, tr_label), (va_data, va_label), (te_data, te_label)
+
+def load_flat_data():
     """
     Take in a .gz file with training, validation, test as tuples.
 

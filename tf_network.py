@@ -2,7 +2,6 @@
 
 import tensorflow as tf
 from tensorflow import keras
-import numpy as np
 import click
 import io_helper
 
@@ -27,16 +26,17 @@ def keras_tutorial():
 @click.option('--epochs', default=10,
               help='Parameter to control how long to make the network learn.',
               show_default=True)
-@click.option('--lmbda', default=0.1,
+@click.option('--lmbda', default=0, type=float,
               help='# >= 0 inclusive to control amount of regularization.',
               show_default=True)
 # pylint: disable=too-many-arguments
 def original_model(eta, batch_size, epochs, lmbda):
-    
-
-    (trd, trl), (vad, val), (ted, tel) = io_helper.load_data()   
+    """Attempt to replicate the original model strucutre."""
+    (trd, trl), (vad, val), (ted, tel) = io_helper.load_data()
+    # TODO: regularization is causing problems 
     model = keras.Sequential([
-        keras.layers.Dense(30, input_shape=[784], activation=tf.nn.sigmoid, kernel_regularizer=tf.keras.regularizers.L2(lmbda)),
+        keras.layers.Flatten(input_shape=(28,28)),
+        keras.layers.Dense(30, activation=tf.nn.sigmoid, kernel_regularizer=tf.keras.regularizers.L2(lmbda)),
         keras.layers.Dense(10, activation=tf.nn.sigmoid, kernel_regularizer=tf.keras.regularizers.L2(lmbda))
     ])
 
@@ -47,7 +47,7 @@ def original_model(eta, batch_size, epochs, lmbda):
     )
 
     history = model.fit(trd, trl, batch_size=batch_size, epochs=epochs)
-    ans = model.evaluate(ted, tel, batch_size=10000)
+    ans = model.evaluate(ted, tel, batch_size=len(ted))
 
 
 if __name__ == "__main__":

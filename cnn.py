@@ -1,48 +1,52 @@
 """Class description for Convolutional Neural Network."""
 
-# standard imports
-
 # third party imports
-import numpy as np
-import theano
-import theano.tensor as T
-from theano.tensor.nnet import conv
-from theano.tensor.nnet import softmax
+import tensorflow as tf
+from tensorflow import keras
+import click
 
 # local imports
 import io_helper
 
 
-# activation functions
-def ReLU(z): return T.maximum(0.0, z)
-from theano.tensor.nnet import sigmoid
-from theano.tensor.nnet import tanh
+@click.command()
+@click.option('--eta', type=float, default=0.5,
+              help='Parameter to control step size during SDG.',
+              show_default=True)
+@click.option('--batch_size', default=10,
+              help='Parameter to control sample size in each SDG step.',
+              show_default=True)
+@click.option('--epochs', default=10,
+              help='Parameter to control how long to make the network learn.',
+              show_default=True)
+@click.option('--reg', default=0.0,
+              help='# >= 0 inclusive to control amount of regularization.',
+              show_default=True)
+def cnn(eta, batch_size, epochs, reg):
+    """Attempt photo recognition using CNNs."""
+    (trd, trl), (vad, val), (ted, tel) = io_helper.load_data()
 
-if GPU:
-    print("Trying to run on a GPU...")
-    try:
-        theano.config.device = 'gpu'
-    except:
-        pass
-    theano.config.floatX = 'float32'
-    print("Success!")
-else:
-    print("Running with a CPU")
+    # TODO: regularization is causing problems 
+    model = keras.Sequential([
+        keras.layers.Conv2D(20, (5,5), activation='sigmoid', input_shape=(28, 28, 1)),
+        keras.layers.MaxPooling2D(2, 2),
+        keras.layers.Conv2D(20, (5,5), activation='sigmoid'),
+        keras.layers.MaxPooling2D(2, 2),
+        keras.layers.Flatten(),
+        keras.layers.Dense(30, activation='sigmoid', kernel_regularizer=tf.keras.regularizers.L2(reg)),
+        keras.layers.Dense(10, activation='sigmoid', kernel_regularizer=tf.keras.regularizers.L2(reg))
+    ])
 
+    model.compile(
+        optimizer=keras.optimizers.experimental.SGD(learning_rate=eta),
+        loss='sparse_categorical_crossentropy',
+        metrics=[keras.metrics.SparseCategoricalAccuracy()]
+    )
 
-
-class CostLayer:
-    """Create output layer based on specific cost function."""
-
-class ConnectedLayer:
-    """Rewrite the majority of original network class."""
-
-
-class CPLayer:
-    """Implement CNN for photo recognition."""
+    history = model.fit(trd, trl, batch_size=batch_size, epochs=epochs)
+    ans = model.evaluate(ted, tel, batch_size=len(ted))
 
 
 
 if __name__ == "__main__":
-    tr, va, te = load_shared_data()
-    breakpoint()
+    cnn()
